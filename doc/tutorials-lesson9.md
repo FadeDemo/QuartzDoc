@@ -74,3 +74,19 @@ org.quartz.jobStore.driverDelegateClass=org.quartz.impl.jdbcjobstore.StdJDBCDele
 
 // TODO: 更新
 配置quartz使用其它数据源的例子将在以后补充
+
+### TerracottaJobStore
+
+`TerracottaJobStore` 在不使用数据库的情况下提供一种可伸缩，健壮的方案
+
+`TerracottaJobStore` 可以运行在集群和非集群环境下，此时工作数据将被保存在Terracotta服务器中。这种情况下quartz的效率将比使用 `JDBCJobStore` 的方式好，但仍比使用 `RAMJobStore` 差一些。但这不失未一种很好的选择，因为它既能保证非易失性，运行效率又比数据库高一些。
+
+如果你正在使用 `StdSchedulerFactory` ，为了使用 `TerracottaJobStore` ，你需要在配置中指出所使用的 `JobStore` 的class，还需要指出Terracotta服务器的位置：
+
+```
+org.quartz.jobStore.class=org.terracotta.quartz.TerracottaJobStore
+org.quartz.jobStore.tcConfigUrl=your-terracotta-server-location
+```
+
+// TODO: 需要部署服务器
+`TerracottaJobStore` 的使用示例待补充：
