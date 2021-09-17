@@ -34,8 +34,8 @@ org.quartz.jobStore.tablePrefix=qrtz_
 org.quartz.jobStore.dataSource=quartzdemo
 org.quartz.dataSource.quartzdemo.driver=com.mysql.cj.jdbc.Driver
 org.quartz.dataSource.quartzdemo.URL=jdbc:mysql:///task_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-org.quartz.dataSource.quartzdemo.user=root
-org.quartz.dataSource.quartzdemo.password=1120.ypzpoi
+org.quartz.dataSource.quartzdemo.user=your-own-db-username
+org.quartz.dataSource.quartzdemo.password=your-own-db-password
 org.quartz.dataSource.quartzdemo.maxConnections=12
 org.quartz.jobStore.driverDelegateClass=org.quartz.impl.jdbcjobstore.StdJDBCDelegate
 # 集群配置
