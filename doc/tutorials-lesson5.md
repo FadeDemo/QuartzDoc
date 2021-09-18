@@ -132,7 +132,7 @@ quartz会为你没显式设置的属性设置合理的值。
 
 ![Snipaste_2021-09-14_16-10-55.png](../img/Snipaste_2021-09-14_16-10-55.png)
 
-各个 `misfireInstruction` 的含义:
+各个 `misfireInstruction` 的含义:（可在 `updateAfterMisfire` 方法和JavaDoc查看相应的含义）
 
 * `MISFIRE_INSTRUCTION_SMART_POLICY`
 

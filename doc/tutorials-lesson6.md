@@ -92,7 +92,29 @@ public class Main {
 
 ![Snipaste_2021-09-14_16-10-55.png](../img/Snipaste_2021-09-14_16-10-55.png)
 
-TODO: 各个 `misfireInstruction` 的含义:
+各个 `misfireInstruction` 的含义:（可在 `updateAfterMisfire` 方法和JavaDoc查看相应的含义）
+
+* `MISFIRE_INSTRUCTION_SMART_POLICY`
+
+在这种策略下，它等同于 `MISFIRE_INSTRUCTION_FIRE_ONCE_NOW` 的效果
+
+![Snipaste_2021-09-18_11-56-18.png](../img/Snipaste_2021-09-18_11-56-18.png)
+
+* `MISFIRE_INSTRUCTION_IGNORE_MISFIRE_POLICY`
+
+此种策略会使调度器不评估当时的情况，而是尽快将其触发以赶上正常的进度。例如一个每15秒触发一次的 `CronTrigger` ，如果有5分钟的错失时间，一旦有机会触发，就会快速连续触发20次。
+
+* `MISFIRE_INSTRUCTION_FIRE_ONCE_NOW`
+
+此种策略会使调度器马上触发 `Trigger` 一次，然后按照Cron表达式定义时间点执行
+
+![Snipaste_2021-09-18_11-57-06.png](../img/Snipaste_2021-09-18_11-57-06.png)
+
+* `MISFIRE_INSTRUCTION_DO_NOTHING`
+
+此种策略会使调度器什么也不做，而是等待Cron表达式配置的下个触发点执行任务
+
+![Snipaste_2021-09-18_13-38-42.png](../img/Snipaste_2021-09-18_13-38-42.png)
 
 它们通过 `CronSchedulerBuilder` 的一些方法进行设置：
 
