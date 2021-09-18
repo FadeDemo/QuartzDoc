@@ -13,7 +13,7 @@
 * `key` - `TriggerKey` ， `Trigger` 的身份标识
 * `priority` `Trigger` 的优先级，当 `Trigger` 较多而线程资源又不足时，优先级最高的 `Trigger` 将被执行，默认是5，优先级可以为正或为负。 `Trigger` 的优先级总是在相同触发时间的 `Trigger` 之间进行比较。 如果 `Trigger` 是可恢复的，在恢复后再调度时，优先级与原 `Trigger` 是一样的
 * `misfireInstruction` 一个持久性的 `Trigger` 有可能因为某些原因（线程资源不足，调度的 `Scheduler` 挂了）而错失了触发时间。不同的 `Trigger` 有不同的可用的 `misfireInstruction` ，默认使用 `MISFIRE_INSTRUCTION_SMART_POLICY` —— 根据 `Trigger` 的类型和配置调整调整行为。当 `Scheduler` 启动时会去寻找错失了触发时间的持久性 `Trigger` ，并根据它们各自的 `misfireInstruction` 去更新 `Trigger` 。
-* `calendarName` quartz的 `Calendar` 对象(不是 `java.util.Calendar` 对象)可以在定义和存储 `Trigger` 的时候与 `Trigger` 进行关联。`Calendar` 在从调度计划中排除时间的方面作用很大。 `Calendar` 必须先实力换然后通过 `Scheduler` 的 `addCalendar(..)` 方法注册。
+* `calendarName` quartz的 `Calendar` 对象(不是 `java.util.Calendar` 对象)可以在定义和存储 `Trigger` 的时候与 `Trigger` 进行关联。`Calendar` 在从调度计划中排除时间的方面作用很大。 `Calendar` 必须先实例化然后通过 `Scheduler` 的 `addCalendar(..)` 方法注册。
   
 下面是一个使用 `Calendar` 的例子：
 
@@ -102,6 +102,8 @@ public class DumbJob implements Job {
 
 }
 ```
+
+TODO: `Scheduler` 的 `addCalendar` 方法的参数 `replace` 和 `updateTriggers` 的作用：
 
 在上面的例子中，程序不会执行任务中的打印语句就退出了，这是因为设置了 `Calendar` 并从调度计划中排除了今天。
 

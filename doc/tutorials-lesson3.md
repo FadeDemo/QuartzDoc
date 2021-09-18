@@ -406,3 +406,149 @@ public class Main {
 * `requestsRecovery()` 如果一个job是可恢复的，并且在其执行的时候，scheduler发生硬关闭（hard shutdown)（比如运行的进程崩溃了，或者关机了），则当scheduler重新启动的时候，该job会被重新执行。此时， `JobExecutionContext.isRecovering()` 返回true。 
 
 `Job` 类的 `execute()` 方法只允许抛出 `JobExecutionException` 和 `RuntimeExceptions`
+
+`Job` 在被执行时可以被 `Scheduler` 打断，通过 `sched.interrupt(job.getKey())` 方法实现，但是此时自定义 `Job` 类必须实现 `InterruptableJob` 接口，不然会产生异常。下面是一个使用示例：
+
+```java
+package org.quartz.examples.example7;
+
+import java.util.Date;
+
+import org.quartz.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+//public class DumbInterruptableJob implements Job {
+public class DumbInterruptableJob implements InterruptableJob {
+    
+    // logging services
+    private static final Logger logger = LoggerFactory.getLogger(DumbInterruptableJob.class);
+    
+    // has the job been interrupted?
+    private boolean interrupted = false;
+
+    // job name 
+    private JobKey jobKey = null;
+    
+    public DumbInterruptableJob() {
+    }
+
+    @Override
+    public void execute(JobExecutionContext context)
+        throws JobExecutionException {
+
+        jobKey = context.getJobDetail().getKey();
+        logger.info("---- " + jobKey + " executing at " + new Date());
+
+        try {
+            // main job loop... see the JavaDOC for InterruptableJob for discussion...
+            // do some work... in this example we are 'simulating' work by sleeping... :)
+
+            for (int i = 0; i < 4; i++) {
+                try {
+                    Thread.sleep(1000L);
+                } catch (Exception ignore) {
+                    ignore.printStackTrace();
+                }
+                
+                // periodically check if we've been interrupted...
+                if(interrupted) {
+                    logger.info("--- " + jobKey + "  -- Interrupted... bailing out!");
+                    return; // could also choose to throw a JobExecutionException 
+                             // if that made for sense based on the particular  
+                             // job's responsibilities/behaviors
+                }
+            }
+            
+        } finally {
+            logger.info("---- " + jobKey + " completed at " + new Date());
+        }
+    }
+    
+    @Override
+    public void interrupt() throws UnableToInterruptJobException {
+        logger.info("---" + jobKey + "  -- INTERRUPTING --");
+        interrupted = true;
+    }
+
+}
+ 
+package org.quartz.examples.example7;
+
+import static org.quartz.DateBuilder.nextGivenSecondDate;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
+
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
+import org.quartz.SchedulerMetaData;
+import org.quartz.SimpleTrigger;
+import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Date;
+
+public class InterruptExample {
+
+  public void run() throws Exception {
+    final Logger log = LoggerFactory.getLogger(InterruptExample.class);
+
+    log.info("------- Initializing ----------------------");
+
+    // First we must get a reference to a scheduler
+    SchedulerFactory sf = new StdSchedulerFactory();
+    Scheduler sched = sf.getScheduler();
+
+    log.info("------- Initialization Complete -----------");
+
+    log.info("------- Scheduling Jobs -------------------");
+
+    // get a "nice round" time a few seconds in the future...
+    Date startTime = nextGivenSecondDate(null, 15);
+
+    JobDetail job = newJob(DumbInterruptableJob.class).withIdentity("interruptableJob1", "group1").build();
+
+    SimpleTrigger trigger = newTrigger().withIdentity("trigger1", "group1").startAt(startTime)
+        .withSchedule(simpleSchedule().withIntervalInSeconds(5).repeatForever()).build();
+
+    Date ft = sched.scheduleJob(job, trigger);
+    log.info(job.getKey() + " will run at: " + ft + " and repeat: " + trigger.getRepeatCount() + " times, every "
+             + trigger.getRepeatInterval() / 1000 + " seconds");
+
+    // start up the scheduler (jobs do not start to fire until
+    // the scheduler has been started)
+    sched.start();
+    log.info("------- Started Scheduler -----------------");
+
+    log.info("------- Starting loop to interrupt job every 7 seconds ----------");
+    for (int i = 0; i < 50; i++) {
+      try {
+        Thread.sleep(7000L);
+        // tell the scheduler to interrupt our job
+        sched.interrupt(job.getKey());
+      } catch (Exception e) {
+        //
+      }
+    }
+
+    log.info("------- Shutting Down ---------------------");
+
+    sched.shutdown(true);
+
+    log.info("------- Shutdown Complete -----------------");
+    SchedulerMetaData metaData = sched.getMetaData();
+    log.info("Executed " + metaData.getNumberOfJobsExecuted() + " jobs.");
+
+  }
+
+  public static void main(String[] args) throws Exception {
+
+    InterruptExample example = new InterruptExample();
+    example.run();
+  }
+
+}
+```
