@@ -92,6 +92,8 @@ public class Main {
 
 ![Snipaste_2021-09-14_16-10-55.png](../img/Snipaste_2021-09-14_16-10-55.png)
 
+TODO: 各个 `misfireInstruction` 的含义:
+
 它们通过 `CronSchedulerBuilder` 的一些方法进行设置：
 
 ![Snipaste_2021-09-14_17-52-20.png](../img/Snipaste_2021-09-14_17-52-20.png)
