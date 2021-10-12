@@ -14,6 +14,215 @@ quartz在运行前需要配置以下几个模块的东西：
   
 `Scheduler` 本身需要被设置一个名字、需要 `RMI` 设置、 `JobStore` 的实例和线程池的实例。 `RMI` 设置包括调度程序是否应将自身创建为RMI的服务器对象（使其可用于远程连接），要使用的主机和端口等。
 
+下面是一个远程连接的官方例子：
+
+服务器配置文件 `server.properties` :
+
+```properties
+#============================================================================
+# Configure Main Scheduler Properties  
+#============================================================================
+
+org.quartz.scheduler.instanceName: Sched1
+org.quartz.scheduler.rmi.export: true
+org.quartz.scheduler.rmi.registryHost: localhost
+org.quartz.scheduler.rmi.registryPort: 1099
+org.quartz.scheduler.rmi.createRegistry: true
+
+#============================================================================
+# Configure ThreadPool  
+#============================================================================
+
+org.quartz.threadPool.class: org.quartz.simpl.SimpleThreadPool
+org.quartz.threadPool.threadCount: 10
+org.quartz.threadPool.threadPriority: 5
+
+#============================================================================
+# Configure JobStore  
+#============================================================================
+
+org.quartz.jobStore.misfireThreshold: 60000
+
+org.quartz.jobStore.class: org.quartz.simpl.RAMJobStore
+```
+
+客户端配置文件 `client.properties` :
+
+```properties
+# Properties file for use by StdSchedulerFactory
+# to create a Quartz Scheduler Instance.
+#
+
+# Configure Main Scheduler Properties  ======================================
+
+org.quartz.scheduler.instanceName: Sched1
+org.quartz.scheduler.logger: schedLogger
+org.quartz.scheduler.rmi.proxy: true
+org.quartz.scheduler.rmi.registryHost: localhost
+org.quartz.scheduler.rmi.registryPort: 1099
+```
+
+服务端Java代码：
+
+```java
+package org.quartz.examples.example12;
+
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
+import org.quartz.SchedulerMetaData;
+import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class RemoteServerExample {
+
+  public void run() throws Exception {
+    System.setProperty(StdSchedulerFactory.PROPERTIES_FILE, "org/quartz/examples/example12/server.properties");
+    Logger log = LoggerFactory.getLogger(RemoteServerExample.class);
+
+    // First we must get a reference to a scheduler
+    SchedulerFactory sf = new StdSchedulerFactory();
+    Scheduler sched = sf.getScheduler();
+
+    log.info("------- Initialization Complete -----------");
+
+    log.info("------- (Not Scheduling any Jobs - relying on a remote client to schedule jobs --");
+
+    log.info("------- Starting Scheduler ----------------");
+
+    // start the schedule
+    sched.start();
+
+    log.info("------- Started Scheduler -----------------");
+
+    log.info("------- Waiting ten minutes... ------------");
+
+    // wait five minutes to give our jobs a chance to run
+    try {
+      Thread.sleep(600L * 1000L);
+    } catch (Exception e) {
+      //
+    }
+
+    // shut down the scheduler
+    log.info("------- Shutting Down ---------------------");
+    sched.shutdown(true);
+    log.info("------- Shutdown Complete -----------------");
+
+    SchedulerMetaData metaData = sched.getMetaData();
+    log.info("Executed " + metaData.getNumberOfJobsExecuted() + " jobs.");
+  }
+
+  public static void main(String[] args) throws Exception {
+
+    RemoteServerExample example = new RemoteServerExample();
+    example.run();
+  }
+
+}
+```
+
+客户端Java代码：
+
+```java
+package org.quartz.examples.example12;
+
+import static org.quartz.CronScheduleBuilder.cronSchedule;
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.TriggerBuilder.newTrigger;
+
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
+import org.quartz.Trigger;
+import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class RemoteClientExample {
+
+    public void run() throws Exception {
+        System.setProperty(StdSchedulerFactory.PROPERTIES_FILE, "org/quartz/examples/example12/client.properties");
+        Logger log = LoggerFactory.getLogger(RemoteClientExample.class);
+
+        // First we must get a reference to a scheduler
+        SchedulerFactory sf = new StdSchedulerFactory();
+        Scheduler sched = sf.getScheduler();
+
+        // define the job and ask it to run
+        JobDetail job = newJob(SimpleJob.class)
+            .withIdentity("remotelyAddedJob", "default")
+            .build();
+        
+        JobDataMap map = job.getJobDataMap();
+        map.put("msg", "Your remotely added job has executed!");
+        
+        Trigger trigger = newTrigger()
+            .withIdentity("remotelyAddedTrigger", "default")
+            .forJob(job.getKey())
+            .withSchedule(cronSchedule("/5 * * ? * *"))
+            .build();
+
+        // schedule the job
+        sched.scheduleJob(job, trigger);
+
+        log.info("Remote job scheduled.");
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        RemoteClientExample example = new RemoteClientExample();
+        example.run();
+    }
+
+}
+```
+
+`Job` Java代码：
+
+```java
+package org.quartz.examples.example12;
+
+import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.JobKey;
+
+public class SimpleJob implements Job {
+
+    public static final String MESSAGE = "msg";
+
+    private static final Logger logger = LoggerFactory.getLogger(SimpleJob.class);
+
+    public SimpleJob() {
+    }
+
+    @Override
+    public void execute(JobExecutionContext context)
+        throws JobExecutionException {
+
+        // This job simply prints out its job name and the
+        // date and time that it is running
+        JobKey jobKey = context.getJobDetail().getKey();
+
+        String message = (String) context.getJobDetail().getJobDataMap().get(MESSAGE);
+
+        logger.info("SimpleJob: " + jobKey + " executing at " + new Date());
+        logger.info("SimpleJob: msg: " + message);
+    }
+
+    
+
+}
+```
+
+注意上面的Java代码，要先启动服务器程序再启动客户端程序，不然会报错。其次，服务端程序和客户端程序也都要指明配置文件位置（如 `System.setProperty(StdSchedulerFactory.PROPERTIES_FILE, "org/quartz/examples/example12/client.properties");` ）。最后服务端程序和客户端程序的调度器要使用同一个。
+
 ### StdSchedulerFactory
 
 `StdSchedulerFactory` 实现了 `org.quartz.SchedulerFactory` 接口，它使用 `java.util.Properties` 创建和实例化 `Scheduler` 。这些属性既可以保存在文件中，也可以通过程序创建传递给 `SchedulerFactory` 。
