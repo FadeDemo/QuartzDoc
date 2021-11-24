@@ -12,7 +12,7 @@ quartz的集群功能只在 `JobStore` 是 `JDBCJobstore` ( `JobStoreTX` 或者 
 org.quartz.jobStore.isClustered=true
 ```
 
-集群中的每个实例应使用相同的配置文件，但是以下是例外：
+集群中的每个实例应使用相同的配置文件(也可以使用多份配置文件，但是除了一些允许不同的属性外，其它属性都应该相同)，但是以下是例外：
 
 * 线程池大小（可选）
 * `org.quartz.scheduler.instanceId` 的值（必选，但可以设置为 `AUTO` 简单完成）
