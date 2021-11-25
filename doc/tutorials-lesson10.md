@@ -6,7 +6,7 @@ quartz在运行前需要配置以下几个模块的东西：
 
 线程池提供线程给quartz执行任务，线程池中线程越多，就能并发地执行越多的任务（理论上说，但有可能你电脑会撑不住:D）。quartz线程池的正确且合适的大小取决于你所使用的 `Scheduler` 的类型。但为了不过多占用资源，线程池的数量越小越好。（确保你的需求的前提下）注意如果线程池的线程数不够， `Trigger` 就会被暂停，这有可能导致线程失火——在配置的 `misfire threshold` 中没有可用的线程。
 
-如果你想要自定义线程池，可以继承 `org.quartz.spi.ThreadPool` 接口。Quartz提供了简单的 `org.quartz.simpl.SimpleThreadPool` 用于使用，它里面的线程数是固定的。
+如果你想要自定义线程池，可以实现 `org.quartz.spi.ThreadPool` 接口。Quartz提供了简单的 `org.quartz.simpl.SimpleThreadPool` 用于使用，它里面的线程数是固定的。
 
 * `JobStore`
 * 数据源（如果使用 `JDBCJobStore` ）
