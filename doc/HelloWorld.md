@@ -106,7 +106,7 @@ public class SimpleJobFactory implements JobFactory {
 }
 ```
 
-`public` 修饰的类使通过 `Object instance = clz.getConstructor().newInstance();` 反射创建时可以通过，而static修饰的内部类使其不依赖于外部类的存在而存在，所以通过 `Object instance = clz.getConstructor().newInstance()` 创建对象时也不会报错。但如果内部类是只有 `public` 修饰的话，这时创建内部类需要通过 `Object instance = clz.getDeclaredConstructor(this.getClass()).newInstance(this);` 来创建。
+`public` 修饰的类使通过 `Object instance = clz.getConstructor().newInstance();` (反射)创建时可以通过，而static修饰的内部类使其不依赖于外部类的存在而存在，所以通过 `Object instance = clz.getConstructor().newInstance()` 创建对象时也不会报错。但如果内部类是只有 `public` 修饰的话，这时创建内部类需要通过 `Object instance = clz.getDeclaredConstructor(this.getClass()).newInstance(this);` 来创建。
 
 详情可以参考下面这个测试类的运行结果：
 
